@@ -276,4 +276,91 @@ module MixinTest
       d.run
     end
   end
+
+  class RewriteTagNameMixinTest < Test::Unit::TestCase
+    include Utils
+
+    def test_tag
+      format_check({
+        'a' => 1
+      }, 'prefix.test')
+
+      d = create_driver([Fluent::RewriteTagNameMixin], %[
+        tag prefix.${tag}
+      ], 'test')
+
+      d.emit({'a' => 1})
+      d.run
+    end
+
+    def test_tag_parts
+      format_check({
+        'a' => 1
+      }, 'test')
+
+      d = create_driver([Fluent::RewriteTagNameMixin], %[
+        tag ${tag_parts[1]}
+      ], 'tag_prefix.test')
+
+      d.emit({'a' => 1})
+      d.run
+    end
+
+    def test_hostname
+      hostname = `hostname`.chomp
+      format_check({
+        'a' => 1
+      }, hostname)
+
+      d = create_driver([Fluent::RewriteTagNameMixin], %[
+        tag ${hostname}
+      ], 'test')
+
+      d.emit({'a' => 1})
+      d.run
+    end
+
+    def test_short_hostname
+      hostname = `hostname -s`.chomp
+      format_check({
+        'a' => 1
+      }, hostname)
+
+      d = create_driver([Fluent::RewriteTagNameMixin], %[
+        tag ${hostname}
+        hostname_command hostname -s
+      ], 'test')
+
+      d.emit({'a' => 1})
+      d.run
+    end
+
+    def test_with_remove_tag_prefix
+      format_check({
+        'a' => 1
+      }, 'newprefix.test')
+
+      d = create_driver([Fluent::HandleTagNameMixin, Fluent::RewriteTagNameMixin], %[
+        tag newprefix.${tag}
+        remove_tag_prefix tag_prefix.
+      ], 'tag_prefix.test')
+
+      d.emit({'a' => 1})
+      d.run
+    end
+
+    def test_with_remove_tag_suffix
+      format_check({
+        'a' => 1
+      }, 'newprefix.test')
+
+      d = create_driver([Fluent::HandleTagNameMixin, Fluent::RewriteTagNameMixin], %[
+        tag newprefix.${tag}
+        remove_tag_suffix .message
+      ], 'test.message')
+
+      d.emit({'a' => 1})
+      d.run
+    end
+  end
 end
