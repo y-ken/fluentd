@@ -211,6 +211,7 @@ module Fluent
     end
 
     MONITOR_INFO = {
+      'instance' => 'object_id',
       'plugin_id' => 'plugin_id',
       'type' => 'config["type"]',
       'output_plugin' => 'is_a?(::Fluent::Output)',
